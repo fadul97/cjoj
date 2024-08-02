@@ -2,9 +2,11 @@
 //
 
 #include <stdio.h>
+#include "joj/defines.h"
 
 int main()
 {
-	printf("Hello, Joj!\n");
+	i32 n = 10;
+	printf("Hello, Joj!\nn = %d\n", n);
 	return 0;
 }
