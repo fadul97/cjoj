@@ -17,7 +17,7 @@ typedef struct Win32Window
     u16 height;
 } JWindow;
 
-LRESULT CALLBACK WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 height, const char* title, WindowMode mode)
 {
@@ -56,7 +56,7 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
     if (!GetClassInfoExA(app_id, joj_wnd_class_name, &wnd_class)) {
         wnd_class.cbSize = sizeof(WNDCLASSEX);
         wnd_class.style = CS_DBLCLKS | CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
-        wnd_class.lpfnWndProc = WinProc;
+        wnd_class.lpfnWndProc = jojWinProc;
         wnd_class.cbClsExtra = 0;
         wnd_class.cbWndExtra = 0;
         wnd_class.hInstance = app_id;
@@ -200,7 +200,7 @@ b8 platform_process_events(JPlatformManager* platform_manager)
     return true;
 }
 
-LRESULT CALLBACK WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_DESTROY:
     case WM_QUIT:
