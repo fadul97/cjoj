@@ -5,5 +5,5 @@
 void print_from_joj()
 {
     const int n = 100;
-    printf("Print from joj! n = %d.\n", n);
+    printf("Print from jojPlatform! n = %d.\n", n);
 }
