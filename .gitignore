@@ -1,0 +1,5 @@
+# Builds
+out/
+
+# Visual Studio
+.vs/
