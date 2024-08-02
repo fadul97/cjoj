@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.8)
 project(joj)
 
-add_library(jojWin32Platform STATIC platform_win32.c)
+add_library(jojWin32Platform STATIC platform_win32.c input_win32.c)
 
 target_link_directories(
     jojWin32Platform 
