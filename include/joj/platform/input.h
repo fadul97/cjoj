@@ -10,7 +10,7 @@
 void input_init();
 void input_shutdown();
 
-void input_set_window(struct JWindow* window);
+void input_set_default_window();
 
 b8 input_is_key_down(u32 key);
 b8 input_is_key_pressed(u32 key);

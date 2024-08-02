@@ -3,8 +3,7 @@
 #if JPLATFORM_WINDOWS
 
 #include "platform/keys.h"
-#include <Windows.h>
-#include <windowsx.h>
+#include "platform/platform.h"
 #include <WinUser.h>
 
 typedef struct JInput_st
@@ -21,7 +20,7 @@ LRESULT CALLBACK jojInputProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
 void input_init()
 {
-    if (!initialized) {
+    if (initialized) {
         return;
     }
 
@@ -33,6 +32,10 @@ void input_init()
     for (i32 i = 0; i < MAX_BUTTONS; ++i) {
         input.mouse.buttons[i] = false;
     }
+
+    initialized = true;
+
+    input_set_default_window();
 }
 
 void input_shutdown()
@@ -40,9 +43,9 @@ void input_shutdown()
     initialized = false;
 }
 
-void input_set_window(struct JWindow* window)
+void input_set_default_window()
 {
-    if (window == NULL) {
+    if (!initialized) {
         return;
     }
 
@@ -58,13 +61,13 @@ b8 input_is_key_pressed(u32 key)
 {
     if (input.ctrl.keys[key])
     {
-        if (is_key_down(key))
+        if (input_is_key_down(key))
         {
             input.ctrl.keys[key] = false;
             return true;
         }
     }
-    else if (is_key_up(key))
+    else if (input_is_key_up(key))
     {
         input.ctrl.keys[key] = true;
     }
@@ -167,8 +170,7 @@ LRESULT CALLBACK jojInputProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
 
     default:
-        return DefWindowProc(hWnd, msg, wParam, lParam);
-        //return CallWindowProc(jojWinProc, hWnd, msg, wParam, lParam);
+        return CallWindowProc(jojWinProc, hWnd, msg, wParam, lParam);
     }
 }
 
