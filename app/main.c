@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include "joj/defines.h"
 #include "joj/error_code.h"
+#include "joj/platform/platform.h"
 
 #include <Windows.h>
 #include <windowsx.h>
@@ -44,8 +45,7 @@ int main()
         }
     }
 
-	i32 n = 10;
-	printf("Hello, Joj!\nn = %d\n", n);
+    print_from_joj();
 	return 0;
 }
 
