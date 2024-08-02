@@ -7,15 +7,15 @@
 #include <windowsx.h>
 #include <WinUser.h>
 
-typedef struct InputConfig_st
+typedef struct JInput_st
 {
     Keyboard keyboard;
     Keyboard ctrl;
     Mouse mouse;
-} InputConfig;
+} JInput;
 
 static b8 initialized = false;
-static InputConfig input = { 0 };
+static JInput input = { 0 };
 
 LRESULT CALLBACK jojInputProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 

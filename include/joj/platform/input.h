@@ -7,8 +7,6 @@
 #include "keys.h"
 #include "platform.h"
 
-struct JInput;
-
 void input_init();
 void input_shutdown();
 
