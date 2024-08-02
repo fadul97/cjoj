@@ -1,5 +1,6 @@
 # Builds
 out/
+build/
 
 # Visual Studio
 .vs/
