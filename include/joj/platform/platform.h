@@ -6,6 +6,9 @@
 
 #include "error_code.h"
 
+#include <Windows.h>
+#include <windowsx.h>
+
 typedef enum WindowMode_enum { BORDERLESS, FULLSCREEN, WINDOWED } WindowMode;
 
 struct JWindow;
@@ -14,6 +17,8 @@ typedef struct JPlatformManager_st
 {
     struct JWindow* window;
 } JPlatformManager;
+
+LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 JAPI ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 height, const char* title, WindowMode mode);
 JAPI void platform_shutdown(JPlatformManager* platform_manager);

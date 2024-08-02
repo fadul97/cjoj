@@ -5,9 +5,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <Windows.h>
-#include <windowsx.h>
-
 typedef struct Win32Window
 {
     HWND handle;
@@ -16,8 +13,6 @@ typedef struct Win32Window
     u16 width;
     u16 height;
 } JWindow;
-
-LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
 ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 height, const char* title, WindowMode mode)
 {
