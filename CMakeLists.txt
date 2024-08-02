@@ -12,4 +12,5 @@ endif()
 project(joj)
 
 # Include sub-projects.
+add_subdirectory(include)
 add_subdirectory(app)
