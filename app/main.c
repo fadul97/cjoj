@@ -2,7 +2,6 @@
 //
 
 #include <stdio.h>
-#include "joj/defines.h"
 #include "joj/error_code.h"
 #include "joj/platform/platform.h"
 

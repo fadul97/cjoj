@@ -4,6 +4,6 @@
 
 void print_from_joj()
 {
-    const int n = 100;
+    const i32 n = 10;
     printf("Print from jojPlatform! n = %d.\n", n);
 }
