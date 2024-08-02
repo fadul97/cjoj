@@ -4,28 +4,28 @@
 #define JOJ_ENGINE_IMPLEMENTATION
 #include "defines.h"
 
-enum Buttons
+typedef enum Buttons_enum
 {
     BUTTON_LEFT,
     BUTTON_RIGHT,
     BUTTON_MIDDLE,
     MAX_BUTTONS
-};
+} Buttons;
 
-struct Keyboard
+typedef struct Keyboard_st
 {
     b8 keys[256];
-};
+} Keyboard;
 
-struct Mouse
+typedef struct Mouse_st
 {
     i16 x;
     i16 y;
     i16 wheel;
     b8 buttons[MAX_BUTTONS];
-};
+} Mouse;
 
-enum Keys
+typedef enum Keys_enum
 {
     /** @brief The backspace key. */
     KEY_BACKSPACE = 0x08,
@@ -305,6 +305,6 @@ enum Keys
     KEY_RBRACKET = 0xDD,
 
     KEYS_MAX_KEYS = 0xFF
-};
+} Keys;
 
 #endif // JOJ_KEYS_H
