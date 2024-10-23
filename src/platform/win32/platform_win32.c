@@ -210,6 +210,23 @@ LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
+void platform_set_window_title(JPlatformManager* platform_manager, const char* title)
+{
+    if (platform_manager == NULL) {
+        printf("JPlatformManager is NULL.");
+        return;
+    }
+
+    if (platform_manager->window == NULL) {
+        printf("JWindow is NULL.");
+        return;
+    }
+
+    JWindow* window = (JWindow*)platform_manager->window;
+
+    SetWindowText(window->handle, title);
+}
+
 void print_from_joj()
 {
     const i32 n = 10;

@@ -23,6 +23,7 @@ LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 JAPI ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 height, const char* title, WindowMode mode);
 JAPI void platform_shutdown(JPlatformManager* platform_manager);
 JAPI b8 platform_process_events(JPlatformManager* platform_manager);
+JAPI void platform_set_window_title(JPlatformManager* platform_manager, const char* title);
 
 JAPI void print_from_joj();
 
