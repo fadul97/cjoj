@@ -1,5 +1,5 @@
 # src/platform/win32/CMakeLists.txt
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.22)
 project(joj)
 
 add_library(jojWin32Platform STATIC platform_win32.c input_win32.c timer_win32.c)
