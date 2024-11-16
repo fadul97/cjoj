@@ -179,7 +179,7 @@ b8 platform_process_events(JPlatformManager* platform_manager)
 {
     if (platform_manager == NULL) {
         printf("JPlatformManager is NULL.");
-        return false;
+        return FALSE;
     }
 
     MSG msg;
@@ -189,10 +189,10 @@ b8 platform_process_events(JPlatformManager* platform_manager)
         DispatchMessage(&msg);
 
         if (msg.message == WM_QUIT || msg.message == WM_DESTROY)
-            return false;
+            return FALSE;
     }
 
-    return true;
+    return TRUE;
 }
 
 LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {

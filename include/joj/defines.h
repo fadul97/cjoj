@@ -2,6 +2,7 @@
 #define JOJ_DEFINES_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 // Unsigned types
 typedef uint8_t u8;
@@ -23,8 +24,8 @@ typedef double f64;
 typedef _Bool b8;
 typedef int b32;
 
-#define true 1
-#define false 0
+#define TRUE 1
+#define FALSE 0
 
 // STATIC_ASSERT macro
 #if defined(__GNUC__)

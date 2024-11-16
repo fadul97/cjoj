@@ -14,7 +14,7 @@ typedef struct Win32Timer_st
     f64 cumulative_elapsed;
 } JTimer;
 
-static b8 initialized = false;
+static b8 initialized = FALSE;
 static JTimer timer = { 0 };
 
 void time_create()
@@ -29,10 +29,10 @@ void time_create()
     ZeroMemory(&timer.end, sizeof(timer.end));
 
     // Timer running
-    timer.stopped = false;
+    timer.stopped = FALSE;
     timer.cumulative_elapsed = 0.0f;
 
-    initialized = true;
+    initialized = TRUE;
 }
 
 void time_start()
@@ -54,7 +54,7 @@ void time_start()
         timer.counter_start.QuadPart -= elapsed;
 
         // Resume normal counting
-        timer.stopped = false;
+        timer.stopped = FALSE;
     }
     else
     {
@@ -69,7 +69,7 @@ void time_stop()
     {
         // Mark the stopping point of time
         QueryPerformanceCounter(&timer.end);
-        timer.stopped = true;
+        timer.stopped = TRUE;
     }
 }
 
@@ -87,7 +87,7 @@ f64 time_reset()
         QueryPerformanceCounter(&timer.counter_start);
 
         // Count reactivated
-        timer.stopped = false;
+        timer.stopped = FALSE;
     }
     else
     {
@@ -134,12 +134,12 @@ f64 time_elapsed()
 
 b8 time_was_elapsed(f64 secs)
 {
-    return (time_elapsed() >= secs ? true : false);
+    return (time_elapsed() >= secs ? TRUE : FALSE);
 }
 
 b8 time_is_cumulative_elapsed_more_than(f64 secs)
 {
-    return (timer.cumulative_elapsed >= secs ? true : false);
+    return (timer.cumulative_elapsed >= secs ? TRUE : FALSE);
 }
 
 f64 time_total_elapsed()
@@ -179,7 +179,7 @@ f64 time_elapsed_since(long long stamp)
 
 b8 time_was_elapsed_since(long long stamp, f64 secs)
 {
-    return (time_elapsed_since(stamp) >= secs ? true : false);
+    return (time_elapsed_since(stamp) >= secs ? TRUE : FALSE);
 }
 
 void time_begin_period()

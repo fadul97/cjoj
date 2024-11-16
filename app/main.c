@@ -27,13 +27,13 @@ int main()
     load_opengl_functions();
     print_from_joj_gl();
 
-    b8 running = true;
+    b8 running = TRUE;
     while (running) {
         if (!platform_process_events(&plat))
-            running = false;
+            running = FALSE;
 
         if (input_is_key_pressed(KEY_ESCAPE)) {
-            running = false;
+            running = FALSE;
         }
 
         if (input_is_key_pressed('A')) {
