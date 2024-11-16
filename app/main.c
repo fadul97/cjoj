@@ -64,7 +64,7 @@ f32 get_frametime(JPlatformManager* plat)
 #endif
 
     // Current frame time
-    frametime = time_reset();
+    frametime = (f32)time_reset();
 
 #ifdef _DEBUG
     // Accumulated frametime
@@ -77,8 +77,6 @@ f32 get_frametime(JPlatformManager* plat)
     if (total_time >= 1.0f)
     {
         char text[256];
-
-        printf("%f\n", frametime);
 
         snprintf(text, sizeof(text), "Joj Engine    FPS: %d    Frametime: %.3f (ms)",
             frame_count, frametime * 1000);
