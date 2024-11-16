@@ -31,7 +31,7 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
     }
     */
 
-    platform_manager->window = (JWindow*)malloc(sizeof(JWindow));
+    platform_manager->window = (struct JWindow*)malloc(sizeof(JWindow));
 
     JWindow* window = (JWindow*)platform_manager->window;
     if (window == NULL) {
