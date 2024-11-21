@@ -5,7 +5,6 @@
 #include "joj/platform/platform.h"
 #include "joj/platform/input.h"
 #include "joj/platform/timer.h"
-#include "joj/renderer/gl/joj_gl.h"
 
 f32 frametime = 0.0f;
 f32 get_frametime(JPlatformManager* plat);
@@ -23,9 +22,6 @@ int main()
     time_create();
     time_start();
     time_begin_period();
-
-    load_opengl_functions();
-    print_from_joj_gl();
 
     b8 running = TRUE;
     while (running) {
