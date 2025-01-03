@@ -5,7 +5,7 @@
 #include "joj/platform/platform.h"
 #include "joj/platform/input.h"
 #include "joj/platform/timer.h"
-#include "joj/renderer/d3d11/renderer_d3d11.h"
+#include "joj/renderer/renderer.h"
 
 f32 frametime = 0.0f;
 f32 get_frametime(JPlatformManager* plat);
@@ -42,14 +42,13 @@ int main()
         }
 
         f32 ft = get_frametime(&plat);
-        printf("ft = %f\n", ft);
     }
 
     time_end_period();
     input_shutdown();
     platform_shutdown(&plat);
 
-    renderer_d3d11_print();
+    renderer_print();
 	return 0;
 }
 
