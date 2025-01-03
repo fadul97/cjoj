@@ -48,8 +48,15 @@ int main()
     input_shutdown();
     platform_shutdown(&plat);
 
-    renderer_print();
-	return 0;
+    JRenderer renderer;
+    if (renderer_init(&renderer) == OK) {
+        printf("Renderer initialized!\n");
+    }
+
+    renderer_print(&renderer);
+    renderer_shutdown(&renderer);
+    
+    return 0;
 }
 
 f32 get_frametime(JPlatformManager* plat)
