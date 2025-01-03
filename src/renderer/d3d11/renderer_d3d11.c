@@ -26,8 +26,15 @@ typedef struct D3D11Renderer_st
 #endif // JOJ_DEBUG_MODE
 } JD3D11Renderer;
 
+b8 g_initialized = FALSE;
+
 ErrorCode renderer_init(JRenderer* renderer)
 {
+    if (g_initialized == TRUE) {
+        printf("JRenderer was already initialized.\n");
+        return OK;
+    }
+
     if (renderer == NULL) {
         printf("JRenderer is NULL.");
         return FAIL;
@@ -39,11 +46,18 @@ ErrorCode renderer_init(JRenderer* renderer)
         return FAIL;
     }
 
+    g_initialized = TRUE;
+
     return OK;
 }
 
 void renderer_shutdown(JRenderer* renderer)
 {
+    if (g_initialized == FALSE) {
+        printf("JRenderer NOT initialized.\n");
+        return;
+    }
+
     if (renderer == NULL) {
         printf("JRenderer is NULL.");
         return;
@@ -59,6 +73,8 @@ void renderer_shutdown(JRenderer* renderer)
 
 void renderer_print(JRenderer* renderer)
 {
-    if (renderer->data != NULL)
-        printf("Print from D3D11Renderer!\n");
+    if (g_initialized == TRUE) {
+        printf("Print from JRenderer!\n");
+        return;
+    }
 }

@@ -49,9 +49,11 @@ int main()
     platform_shutdown(&plat);
 
     JRenderer renderer;
+    /*
     if (renderer_init(&renderer) == OK) {
         printf("Renderer initialized!\n");
     }
+    */
 
     renderer_print(&renderer);
     renderer_shutdown(&renderer);
