@@ -31,6 +31,7 @@ typedef struct JRenderer_st
 
 #if JOJ_DEBUG_MODE
 ID3D11Debug* g_debug;
+void log_hardware_info();
 #endif // JOJ_DEBUG_MODE
 
 JRenderer* g_renderer = NULL;
@@ -153,11 +154,15 @@ ErrorCode renderer_init()
         return FAIL;
     }
 
+    g_initialized = TRUE;
+
+#ifdef JOJ_DEBUG_MODE
+    log_hardware_info();
+#endif // JOJ_DEBUG_MODE
+
     dxgi_device->lpVtbl->Release(dxgi_device);
     dxgi_adapter->lpVtbl->Release(dxgi_adapter);
     dxgi_factory->lpVtbl->Release(dxgi_factory);
-
-    g_initialized = TRUE;
 
     return OK;
 }
@@ -216,3 +221,96 @@ void renderer_print()
         return;
     }
 }
+
+#if JOJ_DEBUG_MODE
+void log_hardware_info()
+{
+    if (g_initialized == FALSE) {
+        printf("JRenderer NOT initialized.\n");
+        return;
+    }
+
+    JD3D11Renderer* data = (JD3D11Renderer*)g_renderer->data;
+
+    const u32 bytes_in_megabyte = 1048576U;
+
+    // ---------------------------------------------------
+    // Video adapter (Graphics card)
+    // ---------------------------------------------------
+
+    IDXGIAdapter* adapter = NULL;
+    if (data->factory->lpVtbl->EnumAdapters(data->factory, 0, &adapter) != DXGI_ERROR_NOT_FOUND)
+    {
+        DXGI_ADAPTER_DESC desc;
+        IDXGIAdapter_GetDesc(adapter, &desc);
+
+        char graphics_card[128];
+        size_t converted_chars = 0;
+        wcstombs_s(&converted_chars, graphics_card, sizeof(graphics_card), desc.Description, _TRUNCATE);
+
+        printf("---> Graphics card: %s.\n", graphics_card);
+    }
+
+    IDXGIAdapter4* adapter4 = NULL;
+    if (SUCCEEDED(adapter->lpVtbl->QueryInterface(adapter, &IID_IDXGIAdapter4, (void**)&adapter4)))
+    {
+        DXGI_QUERY_VIDEO_MEMORY_INFO mem_info;
+        adapter4->lpVtbl->QueryVideoMemoryInfo(adapter4, 0, DXGI_MEMORY_SEGMENT_GROUP_LOCAL, &mem_info);
+
+        printf("---> Video memory (free): %lluMB.\n", mem_info.Budget / bytes_in_megabyte);
+
+        // FIXME: Memory used is wrong
+        printf("---> Video memory(used) : %lluMB.\n", mem_info.CurrentUsage / bytes_in_megabyte);
+
+        adapter4->lpVtbl->Release(adapter4);
+    }
+
+    // ---------------------------------------------------
+    // Max feature Level supported by GPU
+    // ---------------------------------------------------
+
+    // Instructions block
+    {
+        printf("---> Feature Level: 11_0.\n");
+    }
+
+    // ---------------------------------------------------
+    // Video output (monitor)
+    // ---------------------------------------------------
+
+    IDXGIOutput* output = NULL;
+    if (adapter->lpVtbl->EnumOutputs(adapter, 0, &output) != DXGI_ERROR_NOT_FOUND)
+    {
+        DXGI_OUTPUT_DESC desc;
+        IDXGIAdapter_GetDesc(output, &desc);
+
+        char device_name[32];
+        size_t converted_chars = 0;
+        wcstombs_s(&converted_chars, device_name, sizeof(device_name), desc.DeviceName, _TRUNCATE);
+
+        printf("---> Monitor: %s.\n", device_name);
+    }
+
+    // ----------------------------------------------------
+    // Video mode (resolution)
+    // ----------------------------------------------------
+
+    // Get screen dimensions
+    u32 dpi = GetDpiForSystem();
+    u32 screen_width = GetSystemMetricsForDpi(SM_CXSCREEN, dpi);
+    u32 screen_height = GetSystemMetricsForDpi(SM_CYSCREEN, dpi);
+
+    // Get screen update frequency
+    DEVMODE dev_mode = { 0 };
+    dev_mode.dmSize = sizeof(DEVMODE);
+    EnumDisplaySettings(NULL, ENUM_CURRENT_SETTINGS, &dev_mode);
+    u32 refresh = dev_mode.dmDisplayFrequency;
+
+    printf("---> Resolution: %dx%d %d Hz.\n", screen_width, screen_height, refresh);
+
+    // Release used DXGI interfaces
+    if (adapter) adapter->lpVtbl->Release(adapter);
+    if (output) output->lpVtbl->Release(output);
+
+}
+#endif // JOJ_DEBUG_MODE
