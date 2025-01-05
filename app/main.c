@@ -48,12 +48,12 @@ int main()
     input_shutdown();
     platform_shutdown(&plat);
 
-    struct JRenderer* renderer = NULL;
-    if (renderer_init(renderer) != OK) {
+    if (renderer_init() != OK) {
         printf("Failed to initialize Renderer!\n");
+        return -1;
     }
-    renderer_print(&renderer);
-    renderer_shutdown(&renderer);
+    renderer_print();
+    renderer_shutdown();
     
     return 0;
 }
