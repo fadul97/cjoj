@@ -215,12 +215,238 @@ ErrorCode renderer_init()
     swap_chain_desc.Flags = 0;                                                              // Use Back buffer size for Fullscreen
 
     // Create Swap Chain
-    if (data->factory->lpVtbl->CreateSwapChain(data->factory, data->device, &swap_chain_desc,
+    if (IDXGIFactory6_CreateSwapChain(data->factory, data->device, &swap_chain_desc,
         &data->swapchain) != S_OK)
     {
         printf("Failed to create SwapChain.\n");
         return FAIL;
     }
+    
+    // ---------------------------------------------------
+    // Render Target View
+    // ---------------------------------------------------
+
+    // Get backbuffer surface of a Swap Chain
+    ID3D11Texture2D* backbuffer = NULL;
+    if (IDXGISwapChain_GetBuffer(data->swapchain, 0, &IID_ID3D11Texture2D,
+        (void**)&backbuffer) != S_OK)
+    {
+        printf("Failed to Get backbuffer surface of a Swap Chain.\n");
+        return FAIL;
+    }
+
+    // Create render target view for backbuffer
+    if (ID3D11Device_CreateRenderTargetView(data->device, (ID3D11Resource*)backbuffer, NULL,
+        &data->render_target_view) != S_OK)
+    {
+        printf("Failed to create Render Target View.\n");
+        return FAIL;
+    }
+
+    // ---------------------------------------------------
+    // Depth/Stencil Buffer
+    // ---------------------------------------------------
+
+    // Describe Depth/Stencil Buffer
+    D3D11_TEXTURE2D_DESC depth_stencil_tex2d_desc = { 0 };
+    depth_stencil_tex2d_desc.Width = (u32)width;                               // Depth/Stencil buffer width
+    depth_stencil_tex2d_desc.Height = (u32)height;                             // Depth/Stencil buffer height
+    depth_stencil_tex2d_desc.MipLevels = 0;                                    // Number of mipmap levels
+    depth_stencil_tex2d_desc.ArraySize = 1;                                    // Number of textures in array
+    depth_stencil_tex2d_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;           // Color format - Does it need to be the same format of swapChainDesc?
+
+    // No MSAA
+    depth_stencil_tex2d_desc.SampleDesc.Count = 1;                         // Samples per pixel (antialiasing)
+    depth_stencil_tex2d_desc.SampleDesc.Quality = 0;                       // Level of image quality
+
+    depth_stencil_tex2d_desc.Usage = D3D11_USAGE_DEFAULT;                      // Default - GPU will both read and write to the resource
+    depth_stencil_tex2d_desc.BindFlags = D3D11_BIND_DEPTH_STENCIL;             // Where resource will be bound to the pipeline
+    depth_stencil_tex2d_desc.CPUAccessFlags = 0;                               // CPU will not read not write to the Depth/Stencil buffer
+    depth_stencil_tex2d_desc.MiscFlags = 0;                                    // Optional flags
+
+    // Create Depth/Stencil Buffer
+    if (ID3D11Device_CreateTexture2D(data->device, &depth_stencil_tex2d_desc, NULL,
+        &data->depth_stencil_buffer) != S_OK)
+    {
+        printf("Failed to create Depth/Stencil Buffer.\n");
+        return FAIL;
+    }
+
+    // ---------------------------------------------------
+    // Depth/Stencil State - Depth Enabled
+    // ---------------------------------------------------
+
+    // Describe Depth Stencil
+    D3D11_DEPTH_STENCIL_DESC depth_stencil_desc = { 0 };
+
+    // Set up the description of the stencil state.
+    depth_stencil_desc.DepthEnable = TRUE;
+    depth_stencil_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depth_stencil_desc.DepthFunc = D3D11_COMPARISON_LESS;
+
+    depth_stencil_desc.StencilEnable = TRUE;
+    depth_stencil_desc.StencilReadMask = 0xFF;
+    depth_stencil_desc.StencilWriteMask = 0xFF;
+
+    // Stencil operations if pixel is front-facing.
+    depth_stencil_desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depth_stencil_desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+    depth_stencil_desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depth_stencil_desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    // Stencil operations if pixel is back-facing.
+    depth_stencil_desc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depth_stencil_desc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    depth_stencil_desc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depth_stencil_desc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    // Create Depth Stencil State
+    if (ID3D11Device_CreateDepthStencilState(data->device, &depth_stencil_desc,
+        &data->depth_stencil_state) != S_OK)
+    {
+        printf("Failed to create Depth Stencil State.\n");
+        return FAIL;
+    }
+
+    // Set Depth Stencil State
+    ID3D11DeviceContext_OMSetDepthStencilState(data->device_context, data->depth_stencil_state, 1);
+
+    // ---------------------------------------------------
+    // Depth/Stencil State - Depth Disabled
+    // ---------------------------------------------------
+
+    // Describe Depth Stencil
+    D3D11_DEPTH_STENCIL_DESC depth_disabled_stencil_desc = { 0 };
+    ZeroMemory(&depth_disabled_stencil_desc, sizeof(depth_disabled_stencil_desc));
+
+    // Create a second depth stencil state which turns off the Z buffer for 2D rendering.  The only difference is 
+    // that DepthEnable is set to false, all other parameters are the same as the other depth stencil state.
+    depth_disabled_stencil_desc.DepthEnable = FALSE;
+    depth_disabled_stencil_desc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
+    depth_disabled_stencil_desc.DepthFunc = D3D11_COMPARISON_LESS;
+    depth_disabled_stencil_desc.StencilEnable = TRUE;
+    depth_disabled_stencil_desc.StencilReadMask = 0xFF;
+    depth_disabled_stencil_desc.StencilWriteMask = 0xFF;
+    depth_disabled_stencil_desc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depth_disabled_stencil_desc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_INCR;
+    depth_disabled_stencil_desc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depth_disabled_stencil_desc.FrontFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+    depth_disabled_stencil_desc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;
+    depth_disabled_stencil_desc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_DECR;
+    depth_disabled_stencil_desc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;
+    depth_disabled_stencil_desc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;
+
+    // Create Depth Stencil State
+    if (ID3D11Device_CreateDepthStencilState(data->device, &depth_disabled_stencil_desc,
+        &data->depth_disabled_stencil_state) != S_OK)
+    {
+        printf("Failed to create Depth Disabled Stencil State.\n");
+        return FAIL;
+    }
+
+    // ---------------------------------------------------
+    // Depth/Stencil View
+    // ---------------------------------------------------
+
+    D3D11_DEPTH_STENCIL_VIEW_DESC depth_stencil_view_desc = { 0 };
+    ZeroMemory(&depth_stencil_view_desc, sizeof(depth_stencil_view_desc));
+
+    // Set up the depth stencil view description.
+    depth_stencil_view_desc.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depth_stencil_view_desc.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+    depth_stencil_view_desc.Texture2D.MipSlice = 0;
+
+    // Create Depth/Stencil View
+    if (ID3D11Device_CreateDepthStencilView(data->device, (ID3D11Resource*)data->depth_stencil_buffer,
+        &depth_stencil_view_desc, &data->depth_stencil_view) != S_OK)
+    {
+        printf("Failed to create Depth Stencil View.\n");
+        return FAIL;
+    }
+
+    // Bind render target and depth stencil to the Output Merger stage
+    ID3D11DeviceContext_OMSetRenderTargets(data->device_context, 1, &data->render_target_view,
+        data->depth_stencil_view);
+
+    // ---------------------------------------------------
+   // Viewport
+   // ---------------------------------------------------
+
+   // Describe Viewport
+    data->viewport.TopLeftX = 0.0f;
+    data->viewport.TopLeftY = 0.0f;
+    data->viewport.Width = (f32)width;
+    data->viewport.Height = (f32)height;
+    data->viewport.MinDepth = 0.0f;
+    data->viewport.MaxDepth = 1.0f;
+
+    // Set Viewport
+    ID3D11DeviceContext_RSSetViewports(data->device_context, 1, &data->viewport);
+
+    // ---------------------------------------------
+    // Blend State
+    // ---------------------------------------------
+
+    // Describe blend state
+    D3D11_BLEND_DESC blend_desc = { 0 };
+    blend_desc.AlphaToCoverageEnable = FALSE;                                // Highlight the silhouette of sprites
+    blend_desc.IndependentBlendEnable = FALSE;                               // Use the same mix for all render targets
+    blend_desc.RenderTarget[0].BlendEnable = TRUE;                           // Enable blending
+    blend_desc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;             // Source mixing factor
+    blend_desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;        // Target of RGB mixing is inverted alpha
+    blend_desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;                 // Addition operation in color mixing
+    blend_desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA;        // Alpha blend source is the alpha of the pixel shader
+    blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA;   // Fate of Alpha mixture is inverted alpha
+    blend_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;            // Addition operation in color mixing
+    blend_desc.RenderTarget[0].RenderTargetWriteMask = 0x0F;                 // Components of each pixel that can be overwritten
+
+    // Create blend state
+    if (ID3D11Device_CreateBlendState(data->device, &blend_desc, &data->blend_state) != S_OK)
+    {
+        printf("Failed to create Blend State.\n");
+        return FAIL;
+    }
+
+    // Bind blend state to the Output Merger stage
+    ID3D11DeviceContext_OMSetBlendState(data->device_context, data->blend_state, NULL, 0xFFFFFFFF);
+
+    // ---------------------------------------------------
+    // Rasterizer
+    // ---------------------------------------------------
+
+    // Describe rasterizer
+    D3D11_RASTERIZER_DESC rasterizer_desc = { 0 };
+    ZeroMemory(&rasterizer_desc, sizeof(rasterizer_desc));
+    rasterizer_desc.FillMode = D3D11_FILL_SOLID;
+    rasterizer_desc.CullMode = D3D11_CULL_NONE;
+    rasterizer_desc.DepthClipEnable = TRUE;
+
+    // Create Solid rasterizer state
+    if (ID3D11Device_CreateRasterizerState(data->device, &rasterizer_desc, &data->rasterizer_state_solid) != S_OK)
+    {
+        printf("Failed to create Solid Rasterizer State.\n");
+        return FAIL;
+    }
+
+    rasterizer_desc.FillMode = D3D11_FILL_WIREFRAME;
+    rasterizer_desc.CullMode = D3D11_CULL_BACK;
+
+    // Create Wireframe rasterizer state
+    if (ID3D11Device_CreateRasterizerState(data->device, &rasterizer_desc, &data->rasterizer_state_wireframe) != S_OK)
+    {
+        printf("Failed to create Wireframe Rasterizer State.\n");
+        return FAIL;
+    }
+
+    // Set Solid rasterizer state as default
+    ID3D11DeviceContext_RSSetState(data->device_context, data->rasterizer_state_solid);
+
+    // ---------------------------------------------------
+    //	Release Resources
+    // ---------------------------------------------------
+
+    // Release backbuffer
+    backbuffer->lpVtbl->Release(backbuffer);
 
     return OK;
 }
@@ -233,6 +459,62 @@ void renderer_shutdown()
     }
 
     JD3D11Renderer* data = (JD3D11Renderer*)g_renderer->data;
+
+    // Release wireframe rasterizer state
+    if (data->rasterizer_state_wireframe)
+    {
+        data->rasterizer_state_wireframe->lpVtbl->Release(data->rasterizer_state_wireframe);
+        data->rasterizer_state_wireframe = NULL;
+    }
+
+    // Release solid rasterizer state
+    if (data->rasterizer_state_solid)
+    {
+        data->rasterizer_state_solid->lpVtbl->Release(data->rasterizer_state_solid);
+        data->rasterizer_state_solid = NULL;
+    }
+
+    // Release blend state
+    if (data->blend_state)
+    {
+        data->blend_state->lpVtbl->Release(data->blend_state);
+        data->blend_state = NULL;
+    }
+
+    // Release depth stencil view
+    if (data->depth_stencil_view)
+    {
+        data->depth_stencil_view->lpVtbl->Release(data->depth_stencil_view);
+        data->depth_stencil_view = NULL;
+    }
+
+    // Release Depth Disabled Stencil State
+    if (data->depth_disabled_stencil_state)
+    {
+        data->depth_disabled_stencil_state->lpVtbl->Release(data->depth_disabled_stencil_state);
+        data->depth_disabled_stencil_state = NULL;
+    }
+
+    // Release Depth Stencil State
+    if (data->depth_stencil_state)
+    {
+        data->depth_stencil_state->lpVtbl->Release(data->depth_stencil_state);
+        data->depth_stencil_state = NULL;
+    }
+
+    // Release Depth Stencil Buffer
+    if (data->depth_stencil_buffer)
+    {
+        data->depth_stencil_buffer->lpVtbl->Release(data->depth_stencil_buffer);
+        data->depth_stencil_buffer = NULL;
+    }
+
+    // Release render target view
+    if (data->render_target_view)
+    {
+        data->render_target_view->lpVtbl->Release(data->render_target_view);
+        data->render_target_view = NULL;
+    }
 
     // Release swap chain
     if (data->swapchain)
@@ -279,6 +561,48 @@ void renderer_shutdown()
     free(g_renderer->data);
 
     g_initialized = FALSE;
+}
+
+void renderer_start_frame(f32 r, f32 g, f32 b, f32 a)
+{
+    if (g_initialized == FALSE) {
+        printf("JRenderer NOT initialized.\n");
+        return;
+    }
+
+    f32 bgcolor[4] = { r, g, b, a };
+
+    JD3D11Renderer* data = (JD3D11Renderer*)g_renderer->data;
+
+    ID3D11DeviceContext_ClearRenderTargetView(data->device_context, data->render_target_view, bgcolor);
+    ID3D11DeviceContext_ClearDepthStencilView(data->device_context, data->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+}
+
+void renderer_end_frame()
+{
+    if (g_initialized == FALSE) {
+        printf("JRenderer NOT initialized.\n");
+        return;
+    }
+
+    JD3D11Renderer* data = (JD3D11Renderer*)g_renderer->data;
+
+    if (g_vsync)
+    {
+        // Lock to screen refresh rate
+        if (IDXGISwapChain_Present(data->swapchain, 1, 0) != S_OK)
+        {
+            printf("Failed to present SwapChain.\n");
+        }
+    }
+    else
+    {
+        // Present as fast as possible
+        if (IDXGISwapChain_Present(data->swapchain, 0, 0) != S_OK)
+        {
+            printf("Failed to present SwapChain.\n");
+        }
+    }
 }
 
 void renderer_print()

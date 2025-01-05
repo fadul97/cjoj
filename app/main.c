@@ -30,6 +30,8 @@ int main()
 
     b8 running = TRUE;
     while (running) {
+        f32 ft = get_frametime();
+
         if (!platform_process_events())
             running = FALSE;
 
@@ -45,7 +47,8 @@ int main()
             printf("Space down.\n");
         }
 
-        f32 ft = get_frametime();
+        renderer_start_frame(0.0f, 0.0f, 1.0f, 1.0f);
+        renderer_end_frame();
     }
 
     time_end_period();
