@@ -8,17 +8,21 @@
 #include "joj/renderer/renderer.h"
 
 f32 frametime = 0.0f;
-f32 get_frametime(JPlatformManager* plat);
+f32 get_frametime();
 
 int main()
 {
-    JPlatformManager plat;
-    if (platform_init(&plat, 800, 600, "Joj Engine", WINDOWED) != OK) {
+    if (platform_init(800, 600, "Joj Engine", WINDOWED) != OK) {
         printf("Failed to initialize Platform.");
         return FAIL;
     }
 
     input_init();
+
+    if (renderer_init() != OK) {
+        printf("Failed to initialize Renderer!\n");
+        return -1;
+    }
 
     time_create();
     time_start();
@@ -26,7 +30,7 @@ int main()
 
     b8 running = TRUE;
     while (running) {
-        if (!platform_process_events(&plat))
+        if (!platform_process_events())
             running = FALSE;
 
         if (input_is_key_pressed(KEY_ESCAPE)) {
@@ -41,24 +45,20 @@ int main()
             printf("Space down.\n");
         }
 
-        f32 ft = get_frametime(&plat);
+        f32 ft = get_frametime();
     }
 
     time_end_period();
     input_shutdown();
-    platform_shutdown(&plat);
+    platform_shutdown();
 
-    if (renderer_init() != OK) {
-        printf("Failed to initialize Renderer!\n");
-        return -1;
-    }
     renderer_print();
     renderer_shutdown();
     
     return 0;
 }
 
-f32 get_frametime(JPlatformManager* plat)
+f32 get_frametime()
 {
 #ifdef _DEBUG
     static f32 total_time = 0.0f;	// Total time elapsed
@@ -83,7 +83,7 @@ f32 get_frametime(JPlatformManager* plat)
         snprintf(text, sizeof(text), "Joj Engine    FPS: %d    Frametime: %.3f (ms)",
             frame_count, frametime * 1000);
 
-        platform_set_window_title(plat, text);
+        platform_set_window_title(text);
 
         frame_count = 0;
         total_time -= 1.0f;

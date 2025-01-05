@@ -6,6 +6,7 @@
 #include <dxgi1_6.h>
 #include <stdio.h>
 #include "error_code.h"
+#include "platform/platform.h"
 
 typedef struct JD3D11Renderer_st
 {
@@ -36,6 +37,9 @@ void log_hardware_info();
 
 JRenderer* g_renderer = NULL;
 b8 g_initialized = FALSE;
+u32 g_4xmsaa_quality = 0;                     // Default quality
+b8 g_vsync = false;                           // No vertical sync
+u32 g_buffer_count = 2;
 
 ErrorCode renderer_init()
 {
@@ -164,6 +168,60 @@ ErrorCode renderer_init()
     dxgi_adapter->lpVtbl->Release(dxgi_adapter);
     dxgi_factory->lpVtbl->Release(dxgi_factory);
 
+    if (data->device->lpVtbl->CheckMultisampleQualityLevels(data->device, DXGI_FORMAT_R8G8B8A8_UNORM,
+        4, &g_4xmsaa_quality) != S_OK)
+    {
+        // TODO: Better ErrorCode
+        printf("Failed to check multi sample quality levels. Setting it to 0.\n");
+        g_4xmsaa_quality = 0;
+    }
+
+    // ------------------------------------------------------------------------------------------------------
+    //                                          PIPELINE SETUP
+    // ------------------------------------------------------------------------------------------------------
+
+    // ---------------------------------------------------
+    // SwapChain
+    // ---------------------------------------------------
+
+    u16 width, height;
+    window_get_size(&width, &height);
+
+    HWND hwnd = (HWND)platform_get_handle();
+    WindowMode window_mode = platform_get_window_mode();
+
+    // Describe Swap Chain
+    DXGI_SWAP_CHAIN_DESC swap_chain_desc = { 0 };
+    swap_chain_desc.BufferDesc.Width = (u32)width;                                          // Back buffer width
+    swap_chain_desc.BufferDesc.Height = (u32)height;                                        // Back buffer height
+    swap_chain_desc.BufferDesc.RefreshRate.Numerator = 60;                                  // Refresh rate in hertz 
+    swap_chain_desc.BufferDesc.RefreshRate.Denominator = 1;                                 // Denominator is an int
+    swap_chain_desc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;                         // Color format - RGBA 8 bits
+    swap_chain_desc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;     // Default value for Flags
+    swap_chain_desc.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;                     // Default mode for scaling
+
+    // No MSAA
+    swap_chain_desc.SampleDesc.Count = 1;
+    swap_chain_desc.SampleDesc.Quality = 0;
+
+    swap_chain_desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;                          // Use surface as Render Target
+
+    // Check value
+    swap_chain_desc.BufferCount = g_buffer_count;                                           // Number of buffers (Front + Back)
+
+    swap_chain_desc.OutputWindow = hwnd;                                                    // Window ID
+    swap_chain_desc.Windowed = (window_mode == WINDOWED);                                   // Fullscreen or windowed 
+    swap_chain_desc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;                             // Discard surface after presenting
+    swap_chain_desc.Flags = 0;                                                              // Use Back buffer size for Fullscreen
+
+    // Create Swap Chain
+    if (data->factory->lpVtbl->CreateSwapChain(data->factory, data->device, &swap_chain_desc,
+        &data->swapchain) != S_OK)
+    {
+        printf("Failed to create SwapChain.\n");
+        return FAIL;
+    }
+
     return OK;
 }
 
@@ -175,6 +233,15 @@ void renderer_shutdown()
     }
 
     JD3D11Renderer* data = (JD3D11Renderer*)g_renderer->data;
+
+    // Release swap chain
+    if (data->swapchain)
+    {
+        // Direct3D is unable to close when full screen
+        data->swapchain->lpVtbl->SetFullscreenState(data->swapchain, FALSE, NULL);
+        data->swapchain->lpVtbl->Release(data->swapchain);
+        data->swapchain = NULL;
+    }
 
     // Release factory
     if (data->factory)

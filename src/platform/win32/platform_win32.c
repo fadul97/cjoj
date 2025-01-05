@@ -14,26 +14,38 @@ typedef struct Win32Window
     u16 height;
 } JWindow;
 
-ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 height, const char* title, WindowMode mode)
+typedef struct JPlatformManager_st
 {
-    if (platform_manager == NULL) {
-        printf("JPlatformManager is NULL.");
+    JWindow* window;
+} JPlatformManager;
+
+JPlatformManager* g_platform_manager = NULL;
+b8 g_plat_initialized = FALSE;
+
+ErrorCode platform_init(u16 width, u16 height, const char* title, WindowMode mode)
+{
+    if (g_plat_initialized == TRUE) {
+        printf("JPlatformManager was already initialized.\n");
+        return OK;
+    }
+
+    if (g_platform_manager == NULL) {
+        printf("JPlatformManager is NULL. Allocating memory...\n");
+        g_platform_manager = (JPlatformManager*)malloc(sizeof(JPlatformManager));
+
+        if (g_platform_manager == NULL) {
+            printf("Failed to allocate memory for JPlatformManager.\n");
+            return FAIL;
+        }
+    }
+
+    g_platform_manager->window = (JWindow*)malloc(sizeof(JWindow));
+    if (g_platform_manager->window == NULL) {
+        printf("Failed to allocate memory for JWindow.\n");
         return FAIL;
     }
 
-    /*
-    if (platform_manager->window == NULL) {
-        platform_manager->window = (JWindow*) malloc(sizeof(JWindow));
-    }
-    else {
-        printf("JWindow is not NULL.");
-        return FAIL;
-    }
-    */
-
-    platform_manager->window = (struct JWindow*)malloc(sizeof(JWindow));
-
-    JWindow* window = (JWindow*)platform_manager->window;
+    JWindow* window = (JWindow*)g_platform_manager->window;
     if (window == NULL) {
         return FAIL;
     }
@@ -42,7 +54,7 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
 
     HINSTANCE app_id = GetModuleHandle(NULL);
     if (!app_id) {
-        printf("Failed to get module handle.");
+        printf("Failed to get module handle.\n");
         return ERR_WIN32_WINDOW_GET_HANDLE;
     }
 
@@ -64,7 +76,7 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
 
         // Register "JOJ_WINDOW_CLASS" class
         if (!RegisterClassEx(&wnd_class)) {
-            printf("Failed to register window class.");
+            printf("Failed to register window class.\n");
             return ERR_WIN32_WINDOW_REGISTRATION;
         }
     }
@@ -113,7 +125,7 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
     );
 
     if (!window->handle) {
-        printf("Failed to create window.");
+        printf("Failed to create window.\n");
         return ERR_WIN32_WINDOW_HANDLE_CREATION;
     }
 
@@ -124,7 +136,7 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
             GetMenu(window->handle) != NULL,
             GetWindowExStyle(window->handle)))
         {
-            printf("Could not adjust window rect ex.");
+            printf("Could not adjust window rect ex.\n");
         }
 
         LONG xpos = (GetSystemMetrics(SM_CXSCREEN) / 2) - ((new_rect.right - new_rect.left) / 2);
@@ -138,31 +150,28 @@ ErrorCode platform_init(JPlatformManager* platform_manager, u16 width, u16 heigh
             new_rect.bottom - new_rect.top,
             TRUE))
         {
-            printf("Could not move window.");
+            printf("Could not move window.\n");
         }
     }
 
     window->hdc = GetDC(window->handle);
     if (!window->hdc) {
-        printf("Failed to get device context.");
+        printf("Failed to get device context.\n");
     }
+
+    g_plat_initialized = TRUE;
 
     return OK;
 }
 
-void platform_shutdown(JPlatformManager* platform_manager)
+void platform_shutdown()
 {
-    if (platform_manager == NULL) {
-        printf("JPlatformManager is NULL.");
+    if (g_plat_initialized == FALSE) {
+        printf("JPlatformManager NOT initialized.\n");
         return;
     }
 
-    if (platform_manager->window == NULL) {
-        printf("JWindow is NULL.");
-        return;
-    }
-
-    JWindow* window = (JWindow*)platform_manager->window;
+    JWindow* window = (JWindow*)g_platform_manager->window;
 
     if (window->hdc != NULL) {
         ReleaseDC(window->handle, window->hdc);
@@ -173,12 +182,14 @@ void platform_shutdown(JPlatformManager* platform_manager)
         DestroyWindow(window->handle);
         window->handle = NULL;
     }
+
+    g_plat_initialized = FALSE;
 }
 
-b8 platform_process_events(JPlatformManager* platform_manager)
+b8 platform_process_events()
 {
-    if (platform_manager == NULL) {
-        printf("JPlatformManager is NULL.");
+    if (g_plat_initialized == FALSE) {
+        printf("JPlatformManager NOT initialized.\n");
         return FALSE;
     }
 
@@ -196,6 +207,10 @@ b8 platform_process_events(JPlatformManager* platform_manager)
 }
 
 LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (g_plat_initialized == FALSE) {
+        return DefWindowProc(hWnd, msg, wParam, lParam);
+    }
+
     switch (msg) {
     case WM_DESTROY:
     case WM_QUIT:
@@ -210,21 +225,50 @@ LRESULT CALLBACK jojWinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     return DefWindowProc(hWnd, msg, wParam, lParam);
 }
 
-void platform_set_window_title(JPlatformManager* platform_manager, const char* title)
+void platform_set_window_title(const char* title)
 {
-    if (platform_manager == NULL) {
-        printf("JPlatformManager is NULL.");
+    if (g_plat_initialized == FALSE) {
+        printf("JPlatformManager NOT initialized.\n");
         return;
     }
 
-    if (platform_manager->window == NULL) {
-        printf("JWindow is NULL.");
-        return;
-    }
-
-    JWindow* window = (JWindow*)platform_manager->window;
+    JWindow* window = (JWindow*)g_platform_manager->window;
 
     SetWindowText(window->handle, title);
+}
+
+void window_get_size(u16* width, u16* height)
+{
+    if (g_plat_initialized == FALSE) {
+        printf("JPlatformManager NOT initialized.\n");
+        return;
+    }
+
+    JWindow* window = (JWindow*)g_platform_manager->window;
+    *width = window->width;
+    *height = window->height;
+}
+
+void* platform_get_handle()
+{
+    if (g_plat_initialized == FALSE) {
+        printf("JPlatformManager NOT initialized.\n");
+        return;
+    }
+
+    JWindow* window = (JWindow*)g_platform_manager->window;
+    return (void*)window->handle;
+}
+
+JAPI WindowMode platform_get_window_mode()
+{
+    if (g_plat_initialized == FALSE) {
+        printf("JPlatformManager NOT initialized.\n");
+        return;
+    }
+
+    JWindow* window = (JWindow*)g_platform_manager->window;
+    return window->mode;
 }
 
 void print_from_joj()
