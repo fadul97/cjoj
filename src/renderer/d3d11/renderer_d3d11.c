@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "error_code.h"
 
-typedef struct D3D11Renderer_st
+typedef struct JD3D11Renderer_st
 {
     ID3D11Device* device;
     ID3D11DeviceContext* device_context;
@@ -20,11 +20,16 @@ typedef struct D3D11Renderer_st
     ID3D11BlendState* blend_state;                            // Color mix settings
     ID3D11RasterizerState* rasterizer_state_solid;            // Solid Rasterizer state
     ID3D11RasterizerState* rasterizer_state_wireframe;        // Wireframe Rasterizer state
+} JD3D11Renderer;
+
+typedef struct JRenderer
+{
+    JD3D11Renderer* data;
+} JRenderer;
 
 #if JOJ_DEBUG_MODE
-    ID3D11Debug* m_debug;
+ID3D11Debug* g_debug;
 #endif // JOJ_DEBUG_MODE
-} JD3D11Renderer;
 
 b8 g_initialized = FALSE;
 
@@ -36,8 +41,13 @@ ErrorCode renderer_init(JRenderer* renderer)
     }
 
     if (renderer == NULL) {
-        printf("JRenderer is NULL.");
-        return FAIL;
+        printf("JRenderer is NULL. Allocating memory...\n");
+        renderer = (JRenderer*)malloc(sizeof(JRenderer));
+
+        if (renderer == NULL) {
+            printf("Failed to allocate memory for JRenderer.\n");
+            return FAIL;
+        }
     }
 
     renderer->data = (JD3D11Renderer*)malloc(sizeof(JD3D11Renderer));
@@ -45,6 +55,27 @@ ErrorCode renderer_init(JRenderer* renderer)
         printf("Failed to allocate memory for JD3D11Renderer.\n");
         return FAIL;
     }
+
+    JD3D11Renderer* data = (JD3D11Renderer*)renderer->data;
+
+    data->device = NULL;
+    data->device_context = NULL;
+    data->factory = NULL;
+    data->swapchain = NULL;
+    data->render_target_view = NULL;
+    data->depth_stencil_buffer = NULL;
+    data->depth_stencil_state = NULL;
+    data->depth_disabled_stencil_state = NULL;
+    data->depth_stencil_view = NULL;
+    data->viewport.TopLeftX = 0.0f;
+    data->viewport.TopLeftY = 0.0f;
+    data->viewport.Width = 800;
+    data->viewport.Height = 600;
+    data->viewport.MinDepth = 0.0f;
+    data->viewport.MaxDepth = 1.0f;
+    data->blend_state = NULL;
+    data->rasterizer_state_solid = NULL;
+    data->rasterizer_state_wireframe = NULL;
 
     g_initialized = TRUE;
 
@@ -58,17 +89,9 @@ void renderer_shutdown(JRenderer* renderer)
         return;
     }
 
-    if (renderer == NULL) {
-        printf("JRenderer is NULL.");
-        return;
-    }
-
-    if (renderer->data == NULL) {
-        printf("Renderer data is NULL.");
-        return;
-    }
-
     free(renderer->data);
+
+    g_initialized = FALSE;
 }
 
 void renderer_print(JRenderer* renderer)

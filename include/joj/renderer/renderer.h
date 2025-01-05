@@ -6,14 +6,11 @@
 
 #include "error_code.h"
 
-typedef struct JRenderer_st
-{
-    void* data;
-} JRenderer;
+struct JRenderer;
 
-JAPI ErrorCode renderer_init(JRenderer* renderer);
-JAPI void renderer_shutdown(JRenderer* renderer);
+JAPI ErrorCode renderer_init(struct JRenderer** renderer);
+JAPI void renderer_shutdown(struct JRenderer** renderer);
 
-JAPI void renderer_print(JRenderer* renderer);
+JAPI void renderer_print(struct JRenderer** renderer);
 
 #endif // _JOJ_RENDERER_H
