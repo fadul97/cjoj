@@ -38,7 +38,7 @@ void log_hardware_info();
 JRenderer* g_renderer = NULL;
 b8 g_initialized = FALSE;
 u32 g_4xmsaa_quality = 0;                     // Default quality
-b8 g_vsync = false;                           // No vertical sync
+b8 g_vsync = TRUE;                            // Vertical sync
 u32 g_buffer_count = 2;
 
 ErrorCode renderer_init()
@@ -369,10 +369,10 @@ ErrorCode renderer_init()
         data->depth_stencil_view);
 
     // ---------------------------------------------------
-   // Viewport
-   // ---------------------------------------------------
+    // Viewport
+    // ---------------------------------------------------
 
-   // Describe Viewport
+    // Describe Viewport
     data->viewport.TopLeftX = 0.0f;
     data->viewport.TopLeftY = 0.0f;
     data->viewport.Width = (f32)width;

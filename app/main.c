@@ -53,11 +53,12 @@ int main()
 
     time_end_period();
     input_shutdown();
-    platform_shutdown();
 
     renderer_print();
     renderer_shutdown();
-    
+
+    platform_shutdown();
+
     return 0;
 }
 
